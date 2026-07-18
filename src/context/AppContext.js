@@ -8,15 +8,30 @@ import { applyTelegramTheme } from '../lib/telegram';
 
 const AppContext = createContext(null);
 
+const defaultSettings = {
+  currency: 'UZS',
+  currencySymbol: "so'm",
+  language: 'uz',
+  theme: 'system'
+};
+
+// Sinxron ravishda localStorage dan settings ni o'qish (theme flash oldini oladi)
+function getInitialSettings() {
+  if (typeof window === 'undefined') return defaultSettings;
+  try {
+    const stored = localStorage.getItem('afb_settings');
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      return { ...defaultSettings, ...parsed };
+    }
+  } catch (e) {}
+  return defaultSettings;
+}
+
 export function AppProvider({ children }) {
   const [transactions, setTransactions] = useState([]);
   const [budgets, setBudgets] = useState([]);
-  const [settings, setSettings] = useState({
-    currency: 'UZS',
-    currencySymbol: "so'm",
-    language: 'uz',
-    theme: 'system'
-  });
+  const [settings, setSettings] = useState(getInitialSettings);
   const [categories, setCategories] = useState({ expense: [], income: [] });
   const [loading, setLoading] = useState(true);
   const [telegramId, setTelegramId] = useState(null);
@@ -83,8 +98,6 @@ export function AppProvider({ children }) {
 
   // Theme Sync Effect
   useEffect(() => {
-    if (loading) return;
-    
     const applyTheme = (theme) => {
       document.documentElement.setAttribute('data-theme-mode', theme);
       
@@ -137,7 +150,7 @@ export function AppProvider({ children }) {
         window.Telegram?.WebApp?.offEvent('themeChanged', handleTelegramThemeChange);
       };
     }
-  }, [settings.theme, loading]);
+  }, [settings.theme]);
 
   const addTransaction = useCallback(async (tx) => {
     if (useSupabase && telegramId) {
@@ -257,12 +270,7 @@ export function AppProvider({ children }) {
     storage.clearAll();
     setTransactions([]);
     setBudgets([]);
-    setSettings({
-      currency: 'UZS',
-      currencySymbol: "so'm",
-      language: 'uz',
-      theme: 'system'
-    });
+    setSettings(defaultSettings);
     setCategories(getAppCategories());
   }, []);
 

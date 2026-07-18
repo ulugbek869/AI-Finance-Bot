@@ -16,6 +16,33 @@ export const viewport = {
   viewportFit: 'cover',
 };
 
+// Inline script to apply theme instantly before React hydrates (prevents flash)
+const themeInitScript = `
+(function() {
+  try {
+    var stored = localStorage.getItem('afb_settings');
+    var theme = 'system';
+    if (stored) {
+      var parsed = JSON.parse(stored);
+      if (parsed && parsed.theme) theme = parsed.theme;
+    }
+    var doc = document.documentElement;
+    doc.setAttribute('data-theme-mode', theme);
+    if (theme === 'dark' || theme === 'light') {
+      doc.setAttribute('data-theme', theme);
+    } else {
+      var tg = window.Telegram && window.Telegram.WebApp;
+      if (tg && tg.colorScheme) {
+        doc.setAttribute('data-theme', tg.colorScheme);
+      } else {
+        var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        doc.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
+      }
+    }
+  } catch(e) {}
+})();
+`;
+
 export default function RootLayout({ children }) {
   return (
     <html lang="uz">
@@ -25,6 +52,8 @@ export default function RootLayout({ children }) {
           src="https://telegram.org/js/telegram-web-app.js" 
           strategy="beforeInteractive" 
         />
+        {/* Apply saved theme instantly to prevent flash */}
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
       <body>
         <AppProvider>
