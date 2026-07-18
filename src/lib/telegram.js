@@ -22,9 +22,6 @@ export const applyTelegramTheme = () => {
   const tg = getTelegramWebApp();
   if (!tg) return;
 
-  const colorScheme = tg.colorScheme || 'dark';
-  document.documentElement.setAttribute('data-theme', colorScheme);
-
   const root = document.documentElement.style;
   const tp = tg.themeParams || {};
 

@@ -264,6 +264,9 @@ export default function SettingsPage() {
           </div>
         ) : (
           <div className="flex flex-col gap-sm text-center" style={{ padding: '8px 0' }}>
+            <div style={{ width: '72px', height: '72px', borderRadius: '50%', overflow: 'hidden', margin: '0 auto 12px auto', border: '2px solid rgba(255,255,255,0.1)' }}>
+              <img src="/bot.svg" alt="AI Finance Bot Logo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            </div>
             <h3 style={{ fontSize: '18px', fontWeight: '700' }}>AI Finance Bot</h3>
             <p className="text-secondary" style={{ fontSize: '14px' }}>v1.0.0 (Beta)</p>
             <div className="card card-sm text-center" style={{ margin: '8px 0', fontSize: '14px', lineHeight: '1.6' }}>

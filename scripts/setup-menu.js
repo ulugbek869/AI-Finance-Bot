@@ -31,40 +31,67 @@ if (!appUrl || appUrl.includes('your-ngrok-or-hosted-url')) {
 }
 
 async function setupMenuButton() {
-  console.log("⚙️ Telegram Bot uchun 'Open Mini App' menyu tugmasi o'rnatilmoqda...");
+  console.log("⚙️ Telegram Bot sozlamalari yangilanmoqda...");
   console.log(`🔗 Mini App URL: ${appUrl}`);
 
-  const apiUrl = `https://api.telegram.org/bot${token}/setChatMenuButton`;
-  
-  const payload = {
-    menu_button: {
-      type: 'web_app',
-      text: 'Open Mini App',
-      web_app: {
-        url: appUrl
-      }
-    }
-  };
+  const botDescription = `AI Finance Bot 🤖\n\nShaxsiy moliyaviy hisob-kitoblar va byudjet nazoratida sizning sun'iy intellekt yordamchingiz.\n\n✨ Daromad va xarajatlarni oson kiritish\n📊 Oylik limitlar (byudjetlar) o'rnatish\n📈 Moliyaviy statistika va grafiklar\n💡 Sun'iy intellektdan shaxsiy maslahatlar\n📱 Qulay Telegram Mini App interfeysi\n\nMoliyaviy erkinlik sari birinchi qadamni bugun boshlang! 🚀`;
+  const botShortDescription = `Shaxsiy moliyaviy hisob-kitoblar va byudjet nazoratida sizning sun'iy intellekt yordamchingiz.`;
 
   try {
-    const response = await fetch(apiUrl, {
+    // 1. Set Chat Menu Button
+    const menuUrl = `https://api.telegram.org/bot${token}/setChatMenuButton`;
+    const menuPayload = {
+      menu_button: {
+        type: 'web_app',
+        text: 'Open Mini App',
+        web_app: { url: appUrl }
+      }
+    };
+    const menuRes = await fetch(menuUrl, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(payload)
-    });
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(menuPayload)
+    }).then(r => r.json());
 
-    const result = await response.json();
-
-    if (result.ok) {
-      console.log("✅ Muvaffaqiyatli bajarildi! Bot menyusida 'Open Mini App' tugmasi faollashtirildi.");
-      console.log("💡 Telegram botingizga kirib tugmani ko'rishingiz va sinab ko'rishingiz mumkin.");
+    if (menuRes.ok) {
+      console.log("✅ Bot menyusida 'Open Mini App' tugmasi faollashtirildi.");
     } else {
-      console.error("❌ Telegram API xatoligi:", result.description);
+      console.error("❌ Menu tugmasi API xatoligi:", menuRes.description);
     }
+
+    // 2. Set Bot Description (What can this bot do?)
+    const descUrl = `https://api.telegram.org/bot${token}/setMyDescription`;
+    const descPayload = { description: botDescription };
+    const descRes = await fetch(descUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(descPayload)
+    }).then(r => r.json());
+
+    if (descRes.ok) {
+      console.log("✅ Botning 'Description' matni o'rnatildi (start bosishdan oldin ko'rinadi).");
+    } else {
+      console.error("❌ Description API xatoligi:", descRes.description);
+    }
+
+    // 3. Set Bot Short Description
+    const shortDescUrl = `https://api.telegram.org/bot${token}/setMyShortDescription`;
+    const shortDescPayload = { short_description: botShortDescription };
+    const shortDescRes = await fetch(shortDescUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(shortDescPayload)
+    }).then(r => r.json());
+
+    if (shortDescRes.ok) {
+      console.log("✅ Botning 'Short Description' matni o'rnatildi.");
+    } else {
+      console.error("❌ Short Description API xatoligi:", shortDescRes.description);
+    }
+
+    console.log("\n💡 Telegram botingizga kirib o'zgarishlarni ko'rishingiz mumkin.");
   } catch (error) {
-    console.error("❌ Tarmoq xatoligi yuz berdi:", error.message);
+    console.error("❌ Xatolik yuz berdi:", error.message);
   }
 }
 

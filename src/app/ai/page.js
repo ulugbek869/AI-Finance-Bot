@@ -171,9 +171,9 @@ export default function AIPage() {
               >
                 {isAI && (
                   <div className="flex items-center justify-center" style={{ 
-                    width: '32px', height: '32px', borderRadius: '50%', background: 'var(--primary-gradient)', color: '#fff', flexShrink: 0
+                    width: '32px', height: '32px', borderRadius: '50%', overflow: 'hidden', flexShrink: 0
                   }}>
-                    <Brain size={16} />
+                    <img src="/bot.svg" alt="AI Bot" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   </div>
                 )}
                 
@@ -201,9 +201,9 @@ export default function AIPage() {
           {isTyping && (
             <div className="flex gap-xs" style={{ alignSelf: 'flex-start' }}>
               <div className="flex items-center justify-center" style={{ 
-                width: '32px', height: '32px', borderRadius: '50%', background: 'var(--primary-gradient)', color: '#fff', flexShrink: 0
+                width: '32px', height: '32px', borderRadius: '50%', overflow: 'hidden', flexShrink: 0
               }}>
-                <Brain size={16} />
+                <img src="/bot.svg" alt="AI Bot" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               </div>
               <div className="animate-pulse" style={{ 
                 background: 'var(--glass-bg)',

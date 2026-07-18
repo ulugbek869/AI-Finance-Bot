@@ -45,20 +45,39 @@ async function request(method, body = {}) {
   }
 }
 
+function escapeHtml(text) {
+  if (!text) return '';
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 async function startBot() {
   console.log("🚀 Telegram Bot ishga tushdi (Long Polling)...");
   console.log(`🤖 Bot orqali ochiladigan sayt: ${appUrl}`);
   
+  // Delete any existing webhook to ensure long polling works
+  console.log("🧹 Konfliktlarning oldini olish uchun eski webhook tozalanyapti...");
+  const delRes = await request('deleteWebhook', { drop_pending_updates: true });
+  console.log("🧹 Webhook holati:", JSON.stringify(delRes));
+  
   let offset = 0;
   
   // Set Menu Button on start automatically
-  await request('setChatMenuButton', {
+  console.log("⚙️ Menu tugmasi sozlanmoqda...");
+  const menuRes = await request('setChatMenuButton', {
     menu_button: {
       type: 'web_app',
       text: 'Open Mini App',
       web_app: { url: appUrl }
     }
   });
+  console.log("⚙️ Menu tugmasi holati:", JSON.stringify(menuRes));
+
+  console.log("✨ Bot yangi xabarlarni tinglamoqda (polling)...");
 
   while (true) {
     const updatesRes = await request('getUpdates', { offset, timeout: 30 });
@@ -70,12 +89,12 @@ async function startBot() {
         if (update.message && update.message.text) {
           const chatId = update.message.chat.id;
           const text = update.message.text.trim();
-          const firstName = update.message.chat.first_name || 'Foydalanuvchi';
+          const firstName = escapeHtml(update.message.chat.first_name || 'Foydalanuvchi');
 
           if (text.startsWith('/start')) {
             console.log(`📨 /start buyrug'i olindi. Chat ID: ${chatId}`);
             
-            const replyText = `Salom, ${firstName}! 👋\n\nAI Finance Bot shaxsiy moliyaviy maslahatchingizga xush kelibsiz.\n\nDaromad va xarajatlaringizni yozib borish, oylik limitlarni belgilash hamda sun'iy intellektdan maslahatlar olish uchun quyidagi tugmani bosib Mini Appga kiring:`;
+            const replyText = `Salom, <b>${firstName}</b>! 👋\n\n<b>AI Finance Bot</b> shaxsiy moliyaviy maslahatchingizga xush kelibsiz.\n\n<b>Bizning imkoniyatlarimiz:</b>\n✨ Daromad va xarajatlarni oson kiritish\n📊 Oylik limitlar (byudjetlar) o'rnatish\n📈 Moliyaviy statistika va grafiklar\n💡 Sun'iy intellektdan shaxsiy maslahatlar\n📱 Qulay Telegram Mini App interfeysi\n\nMini Appga kirish uchun quyidagi tugmani bosing:`;
             
             const replyMarkup = {
               inline_keyboard: [
@@ -85,11 +104,13 @@ async function startBot() {
               ]
             };
 
-            await request('sendMessage', {
+            const sendRes = await request('sendMessage', {
               chat_id: chatId,
               text: replyText,
+              parse_mode: 'HTML',
               reply_markup: replyMarkup
             });
+            console.log(`📤 Xabar yuborish natijasi:`, JSON.stringify(sendRes));
           }
         }
       }
