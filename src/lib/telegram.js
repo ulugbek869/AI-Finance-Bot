@@ -22,6 +22,12 @@ export const applyTelegramTheme = () => {
   const tg = getTelegramWebApp();
   if (!tg) return;
 
+  // Do not apply Telegram's theme variables if the user has chosen an explicit theme (light/dark)
+  const themeMode = typeof document !== 'undefined' ? document.documentElement.getAttribute('data-theme-mode') : 'system';
+  if (themeMode && themeMode !== 'system') {
+    return;
+  }
+
   const root = document.documentElement.style;
   const tp = tg.themeParams || {};
 
