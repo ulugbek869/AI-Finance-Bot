@@ -6,28 +6,21 @@ import { triggerHaptic } from '../lib/telegram';
 
 export default function TransactionForm({ onSubmit, initialData = null }) {
   const { categories, settings } = useApp();
-  const [type, setType] = useState('expense');
-  const [amount, setAmount] = useState('');
-  const [categoryId, setCategoryId] = useState('');
-  const [note, setNote] = useState('');
-  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [type, setType] = useState(() => initialData?.type || 'expense');
+  const [amount, setAmount] = useState(() => initialData?.amount?.toString() || '');
+  const [categoryId, setCategoryId] = useState(() => initialData?.categoryId || '');
+  const [note, setNote] = useState(() => initialData?.note || '');
+  const [date, setDate] = useState(() => initialData?.date ? initialData.date.slice(0, 10) : new Date().toISOString().slice(0, 10));
 
-  // Load initial data if editing
+  // Set default category if not selected or categories load
   useEffect(() => {
-    if (initialData) {
-      setType(initialData.type);
-      setAmount(initialData.amount.toString());
-      setCategoryId(initialData.categoryId);
-      setNote(initialData.note || '');
-      setDate(initialData.date ? initialData.date.slice(0, 10) : new Date().toISOString().slice(0, 10));
-    } else {
-      // Set default category
+    if (!categoryId) {
       const currentCats = type === 'expense' ? categories.expense : categories.income;
       if (currentCats && currentCats.length > 0) {
         setCategoryId(currentCats[0].id);
       }
     }
-  }, [initialData, categories, type]);
+  }, [categories, type, categoryId]);
 
   // Adjust category selection when type changes
   const handleTypeChange = (newType) => {
