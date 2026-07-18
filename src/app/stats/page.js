@@ -14,6 +14,7 @@ ChartJS.register(ArcElement, Tooltip, Legend);
 export default function StatsPage() {
   const { transactions, settings } = useApp();
   const [period, setPeriod] = useState('month'); // 'week' | 'month' | 'year'
+  const [activeTab, setActiveTab] = useState('expense'); // 'expense' | 'income'
 
   const handlePeriodChange = (newPeriod) => {
     setPeriod(newPeriod);
@@ -55,19 +56,19 @@ export default function StatsPage() {
 
   const periodBalance = periodIncome - periodExpense;
 
-  // Group expenses by category
-  const expenseByCategory = {};
+  // Group by category (depending on active tab)
+  const groupedByCategory = {};
   periodTx
-    .filter(t => t.type === 'expense')
+    .filter(t => t.type === activeTab)
     .forEach(t => {
-      if (!expenseByCategory[t.categoryId]) {
-        expenseByCategory[t.categoryId] = 0;
+      if (!groupedByCategory[t.categoryId]) {
+        groupedByCategory[t.categoryId] = 0;
       }
-      expenseByCategory[t.categoryId] += t.amount;
+      groupedByCategory[t.categoryId] += t.amount;
     });
 
   // Prepare data array for charts and lists
-  const chartDataList = Object.entries(expenseByCategory)
+  const chartDataList = Object.entries(groupedByCategory)
     .map(([catId, amount]) => {
       const category = findCategoryById(catId);
       return {
@@ -80,7 +81,7 @@ export default function StatsPage() {
     })
     .sort((a, b) => b.amount - a.amount);
 
-  const totalExpenseVal = chartDataList.reduce((sum, item) => sum + item.amount, 0);
+  const totalValue = chartDataList.reduce((sum, item) => sum + item.amount, 0);
 
   // Setup Doughnut chart data
   const doughnutData = {
@@ -115,7 +116,7 @@ export default function StatsPage() {
           label: function (context) {
             const label = context.label || '';
             const value = context.parsed || 0;
-            const percentage = totalExpenseVal > 0 ? Math.round((value / totalExpenseVal) * 100) : 0;
+            const percentage = totalValue > 0 ? Math.round((value / totalValue) * 100) : 0;
             const formattedVal = new Intl.NumberFormat('uz-UZ').format(value);
             return ` ${label}: ${formattedVal} ${settings.currencySymbol} (${percentage}%)`;
           }
@@ -154,6 +155,22 @@ export default function StatsPage() {
         </button>
       </section>
 
+      {/* Type Selection (Xarajatlar / Daromadlar) */}
+      <div className="type-selector" style={{ marginBottom: '16px' }}>
+        <button 
+          onClick={() => { setActiveTab('expense'); triggerHaptic('selection'); }}
+          className={`type-btn ${activeTab === 'expense' ? 'active expense' : ''}`}
+        >
+          💸 Xarajatlar
+        </button>
+        <button 
+          onClick={() => { setActiveTab('income'); triggerHaptic('selection'); }}
+          className={`type-btn ${activeTab === 'income' ? 'active income' : ''}`}
+        >
+          💰 Daromadlar
+        </button>
+      </div>
+
       {/* Period Summary Cards */}
       <section className="stats-summary">
         <div className="stats-summary-item">
@@ -178,11 +195,11 @@ export default function StatsPage() {
 
       {/* Chart container */}
       <section className="chart-container">
-        <div className="chart-title">Xarajatlar taqsimoti</div>
+        <div className="chart-title">{activeTab === 'expense' ? 'Xarajatlar taqsimoti' : 'Daromadlar taqsimoti'}</div>
         <div className="chart-canvas-wrap">
           {chartDataList.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-secondary" style={{ fontSize: '14px', fontStyle: 'italic' }}>
-              Ushbu davrda xarajatlar mavjud emas
+              Ushbu davrda {activeTab === 'expense' ? 'xarajatlar' : 'daromadlar'} mavjud emas
             </div>
           ) : (
             <Doughnut data={doughnutData} options={doughnutOptions} />
@@ -193,26 +210,29 @@ export default function StatsPage() {
       {/* Top Categories Ranking List */}
       <section className="top-categories-section">
         <div className="section-header">
-          <h2 className="section-title">Top xarajatlar</h2>
+          <h2 className="section-title">Top {activeTab === 'expense' ? 'xarajatlar' : 'daromadlar'}</h2>
         </div>
 
         {chartDataList.length === 0 ? (
           <div className="card empty-state">
             <div className="empty-state-icon">📊</div>
             <h3 className="empty-state-title">Tahlil qilish uchun yetarli ma'lumot yo'q</h3>
-            <p className="empty-state-text">Ushbu davr uchun xarajatlar kiritilmagan</p>
+            <p className="empty-state-text">Ushbu davr uchun {activeTab === 'expense' ? 'xarajatlar' : 'daromadlar'} kiritilmagan</p>
           </div>
         ) : (
           <div className="top-categories">
             {chartDataList.map((item, idx) => {
-              const percentage = totalExpenseVal > 0 ? Math.round((item.amount / totalExpenseVal) * 100) : 0;
+              const percentage = totalValue > 0 ? Math.round((item.amount / totalValue) * 100) : 0;
               return (
                 <div key={item.id} className="top-category-item">
                   <div className="top-category-rank">{idx + 1}</div>
                   <div className="top-category-info">
                     <div className="flex justify-between items-center">
                       <span className="top-category-name">{item.icon} {item.name}</span>
-                      <span className="top-category-amount">
+                      <span 
+                        className="top-category-amount"
+                        style={{ color: activeTab === 'expense' ? 'var(--expense)' : 'var(--income)' }}
+                      >
                         {new Intl.NumberFormat('uz-UZ').format(item.amount)} {settings.currencySymbol} ({percentage}%)
                       </span>
                     </div>
