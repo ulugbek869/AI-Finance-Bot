@@ -1018,6 +1018,18 @@ ul { list-style: none; }
   color: #fff;
 }
 
+.btn-expense {
+  background: var(--expense-gradient);
+  color: #ffffff !important;
+  box-shadow: 0 4px 16px rgba(255, 107, 107, 0.35);
+}
+
+.btn-income {
+  background: var(--income-gradient);
+  color: #ffffff !important;
+  box-shadow: 0 4px 16px rgba(0, 201, 167, 0.35);
+}
+
 /* ── Bottom Navigation ── */
 .bottom-nav {
   position: fixed;
