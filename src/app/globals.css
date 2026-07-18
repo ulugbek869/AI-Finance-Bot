@@ -108,7 +108,7 @@
 /* ── Light Theme (Explicit Manual Selection) ── */
 [data-theme="light"]:not([data-theme-mode="system"]) {
   /* Override Telegram specific properties to prevent client overrides */
-  --tg-theme-bg-color: #f5f5fa;
+  --tg-theme-bg-color: #e8e9f3;
   --tg-theme-secondary-bg-color: #ffffff;
   --tg-theme-text-color: #1a1a2e;
   --tg-theme-hint-color: #6b6b80;
@@ -116,21 +116,22 @@
   --tg-theme-button-color: #667eea;
   --tg-theme-button-text-color: #ffffff;
 
-  --bg-primary: #f5f5fa;
+  --bg-primary: #e8e9f3;
   --bg-secondary: #ffffff;
-  --bg-card: rgba(0, 0, 0, 0.03);
-  --bg-card-hover: rgba(0, 0, 0, 0.06);
+  --bg-card: rgba(255, 255, 255, 0.95);
+  --bg-card-hover: rgba(255, 255, 255, 1);
+  --bg-modal: rgba(0, 0, 0, 0.4);
 
   --text-primary: #1a1a2e;
   --text-secondary: #6b6b80;
   --text-tertiary: rgba(0, 0, 0, 0.35);
 
-  --border-color: rgba(0, 0, 0, 0.06);
-  --border-color-hover: rgba(0, 0, 0, 0.12);
+  --border-color: rgba(0, 0, 0, 0.08);
+  --border-color-hover: rgba(0, 0, 0, 0.14);
 
-  --glass-bg: rgba(255, 255, 255, 0.7);
-  --glass-border: rgba(0, 0, 0, 0.08);
-  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+  --glass-bg: rgba(255, 255, 255, 0.92);
+  --glass-border: rgba(0, 0, 0, 0.06);
+  --glass-shadow: 0 2px 12px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04);
 
   --link-color: #667eea;
   --button-color: #667eea;
@@ -139,21 +140,22 @@
 
 /* ── Light Theme (System Mode / Telegram Auto) ── */
 [data-theme="light"][data-theme-mode="system"] {
-  --bg-primary: var(--tg-theme-bg-color, #f5f5fa);
+  --bg-primary: var(--tg-theme-bg-color, #e8e9f3);
   --bg-secondary: var(--tg-theme-secondary-bg-color, #ffffff);
-  --bg-card: rgba(0, 0, 0, 0.03);
-  --bg-card-hover: rgba(0, 0, 0, 0.06);
+  --bg-card: rgba(255, 255, 255, 0.95);
+  --bg-card-hover: rgba(255, 255, 255, 1);
+  --bg-modal: rgba(0, 0, 0, 0.4);
 
   --text-primary: var(--tg-theme-text-color, #1a1a2e);
   --text-secondary: var(--tg-theme-hint-color, #6b6b80);
   --text-tertiary: rgba(0, 0, 0, 0.35);
 
-  --border-color: rgba(0, 0, 0, 0.06);
-  --border-color-hover: rgba(0, 0, 0, 0.12);
+  --border-color: rgba(0, 0, 0, 0.08);
+  --border-color-hover: rgba(0, 0, 0, 0.14);
 
-  --glass-bg: rgba(255, 255, 255, 0.7);
-  --glass-border: rgba(0, 0, 0, 0.08);
-  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+  --glass-bg: rgba(255, 255, 255, 0.92);
+  --glass-border: rgba(0, 0, 0, 0.06);
+  --glass-shadow: 0 2px 12px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04);
 
   --link-color: var(--tg-theme-link-color, #667eea);
   --button-color: var(--tg-theme-button-color, #667eea);
