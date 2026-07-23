@@ -298,3 +298,29 @@ export async function updateUserSettings(telegramId, settings) {
     return false;
   }
 }
+
+/**
+ * Foydalanuvchining barcha tranzaksiyalari va byudjetlarini o'chirish
+ */
+export async function removeAllUserData(telegramId) {
+  if (!supabase) return false;
+
+  try {
+    const [txRes, budgetRes] = await Promise.all([
+      supabase.from('transactions').delete().eq('telegram_id', telegramId),
+      supabase.from('budgets').delete().eq('telegram_id', telegramId),
+    ]);
+
+    if (txRes.error) {
+      console.error('[DB] Transactions tozalashda xatolik:', txRes.error.message);
+    }
+    if (budgetRes.error) {
+      console.error('[DB] Budgets tozalashda xatolik:', budgetRes.error.message);
+    }
+
+    return !txRes.error && !budgetRes.error;
+  } catch (e) {
+    console.error('[DB] removeAllUserData xatolik:', e.message);
+    return false;
+  }
+}

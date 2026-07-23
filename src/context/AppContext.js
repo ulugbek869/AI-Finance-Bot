@@ -324,26 +324,44 @@ export function AppProvider({ children }) {
     return { success: true, converted: true, rate: conversionRate };
   }, [budgets, settings, telegramId, transactions, useSupabase]);
 
-  const resetAllData = useCallback(() => {
+  const resetAllData = useCallback(async () => {
     setTransactions([]);
     setBudgets([]);
+
+    if (useSupabase && telegramId) {
+      await db.removeAllUserData(telegramId);
+    }
+
     // "Ma'lumotlarni tozalash" moliyaviy yozuvlarni o'chiradi, ammo
     // foydalanuvchi tanlagan mavzu va asosiy valyutani saqlab qoladi.
     storage.saveTransactions([]);
     storage.saveBudgets([]);
     storage.saveSettings(settings);
-  }, [settings]);
+  }, [useSupabase, telegramId, settings]);
 
-  const importAllData = useCallback((jsonString) => {
+  const importAllData = useCallback(async (jsonString) => {
     const result = storage.importData(jsonString);
     if (result.success) {
-      setTransactions(storage.getTransactions());
-      setBudgets(storage.getBudgets());
-      setSettings(storage.getSettings());
+      const importedTxs = storage.getTransactions();
+      const importedBudgets = storage.getBudgets();
+      const importedSettings = storage.getSettings();
+
+      if (useSupabase && telegramId) {
+        await db.removeAllUserData(telegramId);
+        await Promise.all([
+          ...importedTxs.map(tx => db.insertTransaction(telegramId, tx)),
+          ...importedBudgets.map(b => db.upsertBudget(telegramId, b.categoryId, b.amount)),
+          db.updateUserSettings(telegramId, importedSettings)
+        ]);
+      }
+
+      setTransactions(importedTxs);
+      setBudgets(importedBudgets);
+      setSettings(importedSettings);
       setCategories(getAppCategories());
     }
     return result;
-  }, []);
+  }, [useSupabase, telegramId]);
 
   // Helper getters
   const totalIncome = transactions

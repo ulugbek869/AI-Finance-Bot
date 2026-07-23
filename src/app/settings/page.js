@@ -134,10 +134,10 @@ export default function SettingsPage() {
     reader.readAsText(file);
   };
 
-  const handleReset = () => {
+  const handleReset = async () => {
     triggerHaptic('warning');
     if (confirm(t(language, 'clearConfirm'))) {
-      resetAllData();
+      await resetAllData();
       triggerHaptic('error');
       showToast(t(language, 'cleared'), 'error');
     }
