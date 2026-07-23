@@ -4,27 +4,46 @@ import { findCategoryById } from '../lib/categories';
 import { useApp } from '../context/AppContext';
 import { Trash2 } from 'lucide-react';
 import { triggerHaptic } from '../lib/telegram';
+import { getCategoryName, getLocale, t } from '../lib/i18n';
 
 export default function TransactionItem({ transaction, onDelete }) {
   const { settings } = useApp();
   const category = findCategoryById(transaction.categoryId);
+  const language = settings.language || 'uz';
 
-  const formattedAmount = new Intl.NumberFormat('uz-UZ').format(transaction.amount);
+  const formattedAmount = new Intl.NumberFormat(getLocale(language)).format(transaction.amount);
   const isIncome = transaction.type === 'income';
 
-  // Format Date to local readable string (e.g., 16-Iyul, 2026)
-  const formatDate = (dateStr) => {
+  const pad = (n) => String(n).padStart(2, '0');
+
+  // Har bir amal uchun YYYY-MM-DD-HH:mm formatidagi sana va vaqtni hosil qiladi
+  const formatDate = (tx) => {
     try {
-      const dateObj = new Date(dateStr);
-      return dateObj.toLocaleDateString('uz-UZ', { day: 'numeric', month: 'short' });
+      const source = tx.createdAt || tx.date;
+      if (!source) return '';
+
+      if (!tx.createdAt && typeof tx.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(tx.date)) {
+        return `${tx.date}-00:00`;
+      }
+
+      const d = new Date(source);
+      if (Number.isNaN(d.getTime())) return String(source);
+
+      const year = d.getFullYear();
+      const month = pad(d.getMonth() + 1);
+      const day = pad(d.getDate());
+      const hours = pad(d.getHours());
+      const minutes = pad(d.getMinutes());
+
+      return `${year}-${month}-${day}-${hours}:${minutes}`;
     } catch (e) {
-      return dateStr;
+      return String(tx.date || tx.createdAt || '');
     }
   };
 
   const handleDelete = (e) => {
     e.stopPropagation(); // Avoid triggering parent click
-    if (confirm('Ushbu tranzaksiyani o\'chirib tashlamoqchimisiz?')) {
+    if (confirm(t(language, 'deleteTransactionConfirm'))) {
       triggerHaptic('warning');
       onDelete(transaction.id);
     }
@@ -42,8 +61,8 @@ export default function TransactionItem({ transaction, onDelete }) {
 
       {/* Details */}
       <div className="transaction-details">
-        <div className="transaction-category">{category?.name || 'Boshqa'}</div>
-        <div className="transaction-note">{transaction.note || category?.name || 'Izohsiz'}</div>
+        <div className="transaction-category">{getCategoryName(category, language)}</div>
+        <div className="transaction-note">{transaction.note || getCategoryName(category, language) || t(language, 'noNote')}</div>
       </div>
 
       {/* Amount and Action */}
@@ -52,7 +71,9 @@ export default function TransactionItem({ transaction, onDelete }) {
           <span className={`transaction-amount ${isIncome ? 'income' : 'expense'}`}>
             {isIncome ? '+' : '-'}{formattedAmount} {settings.currencySymbol}
           </span>
-          <span className="transaction-date">{formatDate(transaction.date)}</span>
+          <span className="transaction-date">
+            {formatDate(transaction)}
+          </span>
         </div>
         
         {/* Delete button */}

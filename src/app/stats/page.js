@@ -7,6 +7,7 @@ import { findCategoryById } from '../../lib/categories';
 import { triggerHaptic } from '../../lib/telegram';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 import { Doughnut } from 'react-chartjs-2';
+import { getCategoryName, getLocale, t } from '../../lib/i18n';
 
 // Register Chart.js components
 ChartJS.register(ArcElement, Tooltip, Legend);
@@ -15,6 +16,7 @@ export default function StatsPage() {
   const { transactions, settings } = useApp();
   const [period, setPeriod] = useState('month'); // 'week' | 'month' | 'year'
   const [activeTab, setActiveTab] = useState('expense'); // 'expense' | 'income'
+  const language = settings.language || 'uz';
 
   const handlePeriodChange = (newPeriod) => {
     setPeriod(newPeriod);
@@ -74,7 +76,7 @@ export default function StatsPage() {
       return {
         id: catId,
         amount,
-        name: category?.name || 'Boshqa',
+        name: getCategoryName(category, language),
         icon: category?.icon || '📌',
         color: category?.color || '#8b8b9e'
       };
@@ -117,7 +119,7 @@ export default function StatsPage() {
             const label = context.label || '';
             const value = context.parsed || 0;
             const percentage = totalValue > 0 ? Math.round((value / totalValue) * 100) : 0;
-            const formattedVal = new Intl.NumberFormat('uz-UZ').format(value);
+            const formattedVal = new Intl.NumberFormat(getLocale(language)).format(value);
             return ` ${label}: ${formattedVal} ${settings.currencySymbol} (${percentage}%)`;
           }
         }
@@ -129,8 +131,8 @@ export default function StatsPage() {
   return (
     <>
       <header className="view-header">
-        <h1>Moliya tahlili</h1>
-        <p>Daromad va xarajatlaringiz dinamik tahlili</p>
+        <h1>{t(language, 'statsTitle')}</h1>
+        <p>{t(language, 'statsSubtitle')}</p>
       </header>
 
       {/* Period Selection */}
@@ -139,19 +141,19 @@ export default function StatsPage() {
           onClick={() => handlePeriodChange('week')}
           className={`stats-period-btn ${period === 'week' ? 'active' : ''}`}
         >
-          Hafta
+          {t(language, 'week')}
         </button>
         <button 
           onClick={() => handlePeriodChange('month')}
           className={`stats-period-btn ${period === 'month' ? 'active' : ''}`}
         >
-          Oy
+          {t(language, 'month')}
         </button>
         <button 
           onClick={() => handlePeriodChange('year')}
           className={`stats-period-btn ${period === 'year' ? 'active' : ''}`}
         >
-          Yil
+          {t(language, 'year')}
         </button>
       </section>
 
@@ -161,13 +163,13 @@ export default function StatsPage() {
           onClick={() => { setActiveTab('expense'); triggerHaptic('selection'); }}
           className={`type-btn ${activeTab === 'expense' ? 'active expense' : ''}`}
         >
-          💸 Xarajatlar
+          💸 {t(language, 'expenses')}
         </button>
         <button 
           onClick={() => { setActiveTab('income'); triggerHaptic('selection'); }}
           className={`type-btn ${activeTab === 'income' ? 'active income' : ''}`}
         >
-          💰 Daromadlar
+          💰 {t(language, 'incomes')}
         </button>
       </div>
 
@@ -175,31 +177,31 @@ export default function StatsPage() {
       <section className="stats-summary">
         <div className="stats-summary-item">
           <div className="stats-summary-value text-income">
-            +{new Intl.NumberFormat('uz-UZ').format(periodIncome)}
+            +{new Intl.NumberFormat(getLocale(language)).format(periodIncome)}
           </div>
-          <div className="stats-summary-label">Daromad</div>
+          <div className="stats-summary-label">{t(language, 'income')}</div>
         </div>
         <div className="stats-summary-item">
           <div className="stats-summary-value text-expense">
-            -{new Intl.NumberFormat('uz-UZ').format(periodExpense)}
+            -{new Intl.NumberFormat(getLocale(language)).format(periodExpense)}
           </div>
-          <div className="stats-summary-label">Xarajat</div>
+          <div className="stats-summary-label">{t(language, 'expense')}</div>
         </div>
         <div className="stats-summary-item">
           <div className="stats-summary-value" style={{ color: periodBalance >= 0 ? 'var(--income)' : 'var(--expense)' }}>
-            {periodBalance >= 0 ? '+' : ''}{new Intl.NumberFormat('uz-UZ').format(periodBalance)}
+            {periodBalance >= 0 ? '+' : ''}{new Intl.NumberFormat(getLocale(language)).format(periodBalance)}
           </div>
-          <div className="stats-summary-label">Balans</div>
+          <div className="stats-summary-label">{t(language, 'balance')}</div>
         </div>
       </section>
 
       {/* Chart container */}
       <section className="chart-container">
-        <div className="chart-title">{activeTab === 'expense' ? 'Xarajatlar taqsimoti' : 'Daromadlar taqsimoti'}</div>
+        <div className="chart-title">{activeTab === 'expense' ? t(language, 'expenseDistribution') : t(language, 'incomeDistribution')}</div>
         <div className="chart-canvas-wrap">
           {chartDataList.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-secondary" style={{ fontSize: '14px', fontStyle: 'italic' }}>
-              Ushbu davrda {activeTab === 'expense' ? 'xarajatlar' : 'daromadlar'} mavjud emas
+              {t(language, 'noPeriodData', { type: activeTab === 'expense' ? t(language, 'expenses').toLowerCase() : t(language, 'incomes').toLowerCase() })}
             </div>
           ) : (
             <Doughnut data={doughnutData} options={doughnutOptions} />
@@ -210,14 +212,14 @@ export default function StatsPage() {
       {/* Top Categories Ranking List */}
       <section className="top-categories-section">
         <div className="section-header">
-          <h2 className="section-title">Top {activeTab === 'expense' ? 'xarajatlar' : 'daromadlar'}</h2>
+          <h2 className="section-title">{t(language, 'topCategories', { type: activeTab === 'expense' ? t(language, 'expenses').toLowerCase() : t(language, 'incomes').toLowerCase() })}</h2>
         </div>
 
         {chartDataList.length === 0 ? (
           <div className="card empty-state">
             <div className="empty-state-icon">📊</div>
-            <h3 className="empty-state-title">Tahlil qilish uchun yetarli ma'lumot yo'q</h3>
-            <p className="empty-state-text">Ushbu davr uchun {activeTab === 'expense' ? 'xarajatlar' : 'daromadlar'} kiritilmagan</p>
+            <h3 className="empty-state-title">{t(language, 'notEnoughData')}</h3>
+            <p className="empty-state-text">{t(language, 'noPeriodEntry', { type: activeTab === 'expense' ? t(language, 'expenses').toLowerCase() : t(language, 'incomes').toLowerCase() })}</p>
           </div>
         ) : (
           <div className="top-categories">
@@ -233,7 +235,7 @@ export default function StatsPage() {
                         className="top-category-amount"
                         style={{ color: activeTab === 'expense' ? 'var(--expense)' : 'var(--income)' }}
                       >
-                        {new Intl.NumberFormat('uz-UZ').format(item.amount)} {settings.currencySymbol} ({percentage}%)
+                        {new Intl.NumberFormat(getLocale(language)).format(item.amount)} {settings.currencySymbol} ({percentage}%)
                       </span>
                     </div>
                     <div className="top-category-bar">

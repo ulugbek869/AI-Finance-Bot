@@ -1,6 +1,7 @@
 // scripts/setup-menu.js
 const fs = require('fs');
 const path = require('path');
+const { createHash } = require('crypto');
 
 // 1. Load .env file manually (Zero-dependency dotenv helper)
 const envPath = path.join(__dirname, '..', '.env');
@@ -19,6 +20,8 @@ if (fs.existsSync(envPath)) {
 
 const token = process.env.TELEGRAM_BOT_TOKEN;
 const appUrl = process.env.MINI_APP_URL;
+const webhookSecret = process.env.TELEGRAM_WEBHOOK_SECRET
+  || createHash('sha256').update(`${token}:telegram-webhook`).digest('hex');
 
 if (!token || token.includes('your_bot_token_here')) {
   console.error("❌ Xatolik: Iltimos, loyiha ildizidagi '.env' fayliga Telegram Bot Tokeningizni kiriting!");
@@ -87,6 +90,26 @@ async function setupMenuButton() {
       console.log("✅ Botning 'Short Description' matni o'rnatildi.");
     } else {
       console.error("❌ Short Description API xatoligi:", shortDescRes.description);
+    }
+
+    // 4. Deliver /start updates to the deployed Next.js app.
+    const webhookUrl = `${appUrl.replace(/\/+$/, '')}/api/telegram/webhook`;
+    const webhookPayload = {
+      url: webhookUrl,
+      allowed_updates: ['message'],
+      secret_token: webhookSecret
+    };
+
+    const webhookRes = await fetch(`https://api.telegram.org/bot${token}/setWebhook`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(webhookPayload)
+    }).then(r => r.json());
+
+    if (webhookRes.ok) {
+      console.log("✅ Webhook sozlandi. Endi 'npm run bot' doimiy ishlashi shart emas.");
+    } else {
+      console.error("❌ Webhook API xatoligi:", webhookRes.description);
     }
 
     console.log("\n💡 Telegram botingizga kirib o'zgarishlarni ko'rishingiz mumkin.");

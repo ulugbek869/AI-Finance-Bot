@@ -147,6 +147,29 @@ export async function removeTransaction(transactionId) {
   }
 }
 
+/**
+ * Valyuta o'zgarganda tranzaksiya summasini yangilash.
+ */
+export async function updateTransactionAmount(transactionId, amount) {
+  if (!supabase) return false;
+
+  try {
+    const { error } = await supabase
+      .from('transactions')
+      .update({ amount: parseFloat(amount) })
+      .eq('id', transactionId);
+
+    if (error) {
+      console.error('[DB] Transaction summasini yangilashda xatolik:', error.message);
+      return false;
+    }
+    return true;
+  } catch (e) {
+    console.error('[DB] updateTransactionAmount xatolik:', e.message);
+    return false;
+  }
+}
+
 // ==================== BUDGETS ====================
 
 /**

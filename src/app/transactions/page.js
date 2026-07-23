@@ -6,12 +6,14 @@ import BottomNav from '../../components/BottomNav';
 import TransactionItem from '../../components/TransactionItem';
 import Toast from '../../components/Toast';
 import { triggerHaptic } from '../../lib/telegram';
+import { getLocale, t } from '../../lib/i18n';
 
 export default function TransactionsPage() {
   const { transactions, deleteTransaction, settings } = useApp();
   const [filter, setFilter] = useState('all'); // 'all' | 'expense' | 'income'
   const [toastMessage, setToastMessage] = useState('');
   const [toastType, setToastType] = useState('success');
+  const language = settings.language || 'uz';
 
   const showToast = (message, type = 'success') => {
     setToastMessage(message);
@@ -54,23 +56,23 @@ export default function TransactionsPage() {
       const today = new Date().toISOString().slice(0, 10);
       const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
       
-      if (dateStr === today) return 'Bugun';
-      if (dateStr === yesterday) return 'Kecha';
+      if (dateStr === today) return t(language, 'today');
+      if (dateStr === yesterday) return t(language, 'yesterday');
 
       const dateObj = new Date(dateStr);
-      return dateObj.toLocaleDateString('uz-UZ', { day: 'numeric', month: 'long', year: 'numeric' });
+      return dateObj.toLocaleDateString(getLocale(language), { day: 'numeric', month: 'long', year: 'numeric' });
     } catch (e) {
       return dateStr;
     }
   };
 
-  const formattedSum = new Intl.NumberFormat('uz-UZ').format(Math.abs(filteredSum));
+  const formattedSum = new Intl.NumberFormat(getLocale(language)).format(Math.abs(filteredSum));
 
   return (
     <>
       <header className="view-header">
-        <h1>Amallar tarixi</h1>
-        <p>Barcha daromad va xarajatlaringiz ro'yxati</p>
+        <h1>{t(language, 'transactionsTitle')}</h1>
+        <p>{t(language, 'transactionsSubtitle')}</p>
       </header>
 
       {/* Filter Bar */}
@@ -79,19 +81,19 @@ export default function TransactionsPage() {
           onClick={() => handleFilterChange('all')}
           className={`filter-chip ${filter === 'all' ? 'active' : ''}`}
         >
-          🔍 Barchasi
+          🔍 {t(language, 'all')}
         </div>
         <div 
           onClick={() => handleFilterChange('expense')}
           className={`filter-chip ${filter === 'expense' ? 'active' : ''}`}
         >
-          💸 Xarajatlar
+          💸 {t(language, 'expenses')}
         </div>
         <div 
           onClick={() => handleFilterChange('income')}
           className={`filter-chip ${filter === 'income' ? 'active' : ''}`}
         >
-          💰 Daromadlar
+          💰 {t(language, 'incomes')}
         </div>
       </section>
 
@@ -99,7 +101,7 @@ export default function TransactionsPage() {
       <section className="card card-sm mb-md" style={{ marginBottom: '16px' }}>
         <div className="flex justify-between items-center">
           <span className="text-secondary" style={{ fontSize: '14px', fontWeight: '500' }}>
-            {filter === 'all' ? 'Filtrlangan balans' : filter === 'expense' ? 'Jami xarajat' : 'Jami daromad'}
+            {filter === 'all' ? t(language, 'filteredBalance') : filter === 'expense' ? t(language, 'totalExpense') : t(language, 'totalIncome')}
           </span>
           <span className={`transaction-amount ${filteredSum >= 0 ? 'income' : 'expense'}`} style={{ fontSize: '18px', fontWeight: '700' }}>
             {filteredSum >= 0 ? '' : '-'}{formattedSum} {settings.currencySymbol}
@@ -112,8 +114,8 @@ export default function TransactionsPage() {
         {dateGroups.length === 0 ? (
           <div className="card empty-state">
             <div className="empty-state-icon">📂</div>
-            <h3 className="empty-state-title">Ma'lumotlar mavjud emas</h3>
-            <p className="empty-state-text">Tanlangan filtr bo'yicha hech qanday amal topilmadi</p>
+            <h3 className="empty-state-title">{t(language, 'noData')}</h3>
+            <p className="empty-state-text">{t(language, 'noDataDescription')}</p>
           </div>
         ) : (
           dateGroups.map(([date, txs]) => (
@@ -126,7 +128,7 @@ export default function TransactionsPage() {
                     transaction={tx} 
                     onDelete={(id) => {
                       deleteTransaction(id);
-                      showToast('Tranzaksiya o\'chirildi', 'error');
+                      showToast(t(language, 'transactionDeleted'), 'error');
                     }}
                   />
                 ))}

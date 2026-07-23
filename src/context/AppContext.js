@@ -5,15 +5,24 @@ import * as storage from '../lib/storage';
 import * as db from '../lib/db';
 import { getAppCategories } from '../lib/categories';
 import { applyTelegramTheme } from '../lib/telegram';
+import { convertCurrencyAmount } from '../lib/currency';
 
 const AppContext = createContext(null);
 
 const defaultSettings = {
   currency: 'UZS',
-  currencySymbol: "so'm",
+  currencySymbol: 'sum',
   language: 'uz',
   theme: 'system'
 };
+
+function normalizeCurrencySymbol(settings) {
+  const legacyUzbekSomSymbols = ["so'm", 'so‘m', 'soʻm'];
+  if (settings?.currency === 'UZS' && legacyUzbekSomSymbols.includes(settings.currencySymbol)) {
+    return { ...settings, currencySymbol: 'sum' };
+  }
+  return settings;
+}
 
 // Sinxron ravishda localStorage dan settings ni o'qish (theme flash oldini oladi)
 function getInitialSettings() {
@@ -22,7 +31,7 @@ function getInitialSettings() {
     const stored = localStorage.getItem('afb_settings');
     if (stored) {
       const parsed = JSON.parse(stored);
-      return { ...defaultSettings, ...parsed };
+      return normalizeCurrencySymbol({ ...defaultSettings, ...parsed });
     }
   } catch (e) {}
   return defaultSettings;
@@ -68,7 +77,7 @@ export function AppProvider({ children }) {
           setTransactions(dbTransactions);
           setBudgets(dbBudgets);
           if (dbSettings) {
-            setSettings(dbSettings);
+            setSettings(normalizeCurrencySymbol(dbSettings));
           }
 
           console.log('[App] Supabase dan ma\'lumotlar yuklandi ✅');
@@ -76,7 +85,7 @@ export function AppProvider({ children }) {
           // Fallback: localStorage dan olish
           setTransactions(storage.getTransactions());
           setBudgets(storage.getBudgets());
-          setSettings(storage.getSettings());
+          setSettings(normalizeCurrencySymbol(storage.getSettings()));
           console.log('[App] localStorage dan ma\'lumotlar yuklandi (fallback)');
         }
 
@@ -86,7 +95,7 @@ export function AppProvider({ children }) {
         // Xatolikda localStorage ga qaytish
         setTransactions(storage.getTransactions());
         setBudgets(storage.getBudgets());
-        setSettings(storage.getSettings());
+        setSettings(normalizeCurrencySymbol(storage.getSettings()));
         setCategories(getAppCategories());
       } finally {
         setLoading(false);
@@ -151,6 +160,10 @@ export function AppProvider({ children }) {
       };
     }
   }, [settings.theme]);
+
+  useEffect(() => {
+    document.documentElement.lang = ['uz', 'ru', 'en'].includes(settings.language) ? settings.language : 'uz';
+  }, [settings.language]);
 
   const addTransaction = useCallback(async (tx) => {
     if (useSupabase && telegramId) {
@@ -266,13 +279,60 @@ export function AppProvider({ children }) {
     storage.saveSettings(updated);
   }, [useSupabase, telegramId, settings]);
 
+  const convertCurrency = useCallback(async ({ currency, currencySymbol, rates }) => {
+    if (currency === settings.currency) return { success: true, converted: false };
+
+    const sourceRate = Number(rates?.[settings.currency]);
+    const targetRate = Number(rates?.[currency]);
+    if (!Number.isFinite(sourceRate) || !Number.isFinite(targetRate) || sourceRate <= 0 || targetRate <= 0) {
+      return { success: false, message: "Tanlangan valyuta uchun kurs topilmadi." };
+    }
+
+    const conversionRate = sourceRate / targetRate;
+    const convertedTransactions = transactions.map((transaction) => ({
+      ...transaction,
+      amount: convertCurrencyAmount(transaction.amount, conversionRate, currency),
+    }));
+    const convertedBudgets = budgets.map((budget) => ({
+      ...budget,
+      amount: convertCurrencyAmount(budget.amount, conversionRate, currency),
+    }));
+
+    if (convertedTransactions.some((item) => item.amount === null) || convertedBudgets.some((item) => item.amount === null)) {
+      return { success: false, message: "Summalarni valyutaga o'tkazib bo'lmadi." };
+    }
+
+    const updatedSettings = { ...settings, currency, currencySymbol };
+    if (useSupabase && telegramId) {
+      const saved = await Promise.all([
+        ...convertedTransactions.map((transaction) => db.updateTransactionAmount(transaction.id, transaction.amount)),
+        ...convertedBudgets.map((budget) => db.upsertBudget(telegramId, budget.categoryId, budget.amount)),
+        db.updateUserSettings(telegramId, updatedSettings),
+      ]);
+      if (saved.some((success) => !success)) {
+        return { success: false, message: "Ma'lumotlar serverga saqlanmadi. Qayta urinib ko'ring." };
+      }
+    }
+
+    setTransactions(convertedTransactions);
+    setBudgets(convertedBudgets);
+    setSettings(updatedSettings);
+    storage.saveTransactions(convertedTransactions);
+    storage.saveBudgets(convertedBudgets);
+    storage.saveSettings(updatedSettings);
+
+    return { success: true, converted: true, rate: conversionRate };
+  }, [budgets, settings, telegramId, transactions, useSupabase]);
+
   const resetAllData = useCallback(() => {
-    storage.clearAll();
     setTransactions([]);
     setBudgets([]);
-    setSettings(defaultSettings);
-    setCategories(getAppCategories());
-  }, []);
+    // "Ma'lumotlarni tozalash" moliyaviy yozuvlarni o'chiradi, ammo
+    // foydalanuvchi tanlagan mavzu va asosiy valyutani saqlab qoladi.
+    storage.saveTransactions([]);
+    storage.saveBudgets([]);
+    storage.saveSettings(settings);
+  }, [settings]);
 
   const importAllData = useCallback((jsonString) => {
     const result = storage.importData(jsonString);
@@ -308,6 +368,7 @@ export function AppProvider({ children }) {
       updateTransaction,
       updateBudget,
       updateSettings,
+      convertCurrency,
       resetAllData,
       importAllData,
       totalIncome,

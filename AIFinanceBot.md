@@ -46,14 +46,15 @@ Shaxsiy moliyaviy daromad va xarajatlarni boshqarish uchun mo'ljallangan, Telegr
    - `TELEGRAM_BOT_TOKEN` o'zgaruvchisiga o'zingizning bot tokeningizni yozing.
    - `MINI_APP_URL` o'zgaruvchisiga Mini App ochiladigan sayt (masalan, `ngrok` manzilingiz: `https://xxxx.ngrok-free.app`) yozing.
 
-4. **Menyuda "Open Mini App" Tugmasini Faollashtirish**:
-   Har safar botingizga kirganda chap pastki burchakda avtomatik "Open Mini App" tugmasi chiqishi uchun quyidagi buyruqni bir marta bajaring:
+4. **Webhook va "Open Mini App" tugmasini sozlash**:
+   Saytingizni HTTPS manzilga (masalan, Vercel) deploy qiling va shu manzilni `MINI_APP_URL` ga yozing. Keyin quyidagi buyruqni bir marta bajaring:
    ```bash
    npm run setup-menu
    ```
+   Bu bot menyusini hamda `/start` xabarlarini qabul qiladigan webhookni sozlaydi. Shundan keyin bot serverda javob beradi, kompyuterda `npm run bot` ochiq turishi shart emas.
 
-5. **Telegram Botini Ishga Tushirish (Long Polling)**:
-   Agar botingiz foydalanuvchilar `/start` yuborganda inline havola bilan javob berishini xohlasangiz, botni ishga tushiring:
+5. **Mahalliy sinov (ixtiyoriy)**:
+   `npm run bot` faqat local long polling sinovi uchun. U webhookni o'chiradi, shuning uchun deploy qilingan bot uchun uni ishga tushirmang.
    ```bash
    npm run bot
    ```

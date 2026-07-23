@@ -54,7 +54,7 @@ export const saveCategories = (cats) => save(KEYS.CATEGORIES, cats);
 
 export const getSettings = () => load(KEYS.SETTINGS, {
   currency: 'UZS',
-  currencySymbol: "so'm",
+  currencySymbol: 'sum',
   language: 'uz',
   theme: 'system'
 });

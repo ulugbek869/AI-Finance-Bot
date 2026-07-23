@@ -5,7 +5,11 @@ import { useApp } from '../../context/AppContext';
 import { Send } from 'lucide-react';
 import BottomNav from '../../components/BottomNav';
 import { triggerHaptic } from '../../lib/telegram';
+import { useTelegram } from '../../hooks/useTelegram';
 import { buildFinancialContext } from '../../lib/ai-context';
+import { getLocale, t } from '../../lib/i18n';
+
+const AI_REQUEST_TIMEOUT_MS = 25_000;
 
 export default function AIPage() {
   const {
@@ -17,35 +21,65 @@ export default function AIPage() {
     settings,
     categories,
   } = useApp();
+  const { userName } = useTelegram();
+  const language = settings.language || 'uz';
   const [messages, setMessages] = useState([
     {
       sender: 'ai',
-      text: "Salom! Men sizning shaxsiy moliyaviy maslahatchingizman. Men sizning balansingiz, xarajatlaringiz va oylik byudjetingizni tahlil qila olaman. Sizga qanday yordam bera olaman?",
-      time: new Date().toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' }),
+      text: t(language, 'aiGreetingWithName', { name: userName || t(language, 'guestUser') }),
+      time: new Date().toLocaleTimeString(getLocale(language), { hour: '2-digit', minute: '2-digit' }),
     },
   ]);
   const [inputVal, setInputVal] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const chatEndRef = useRef(null);
+  const requestControllerRef = useRef(null);
+  const requestTimeoutRef = useRef(null);
+  const unmountedRef = useRef(false);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isTyping]);
 
+  useEffect(() => {
+    setMessages((previous) => {
+      if (previous.length !== 1 || previous[0].sender !== 'ai') return previous;
+
+      return [{
+        ...previous[0],
+        text: t(language, 'aiGreetingWithName', { name: userName || t(language, 'guestUser') }),
+      }];
+    });
+  }, [language, userName]);
+
+  useEffect(() => {
+    unmountedRef.current = false;
+
+    return () => {
+      unmountedRef.current = true;
+      clearTimeout(requestTimeoutRef.current);
+      requestControllerRef.current?.abort();
+    };
+  }, []);
+
   const handleSendMessage = async (textToSend) => {
-    if (!textToSend.trim() || isTyping) return;
+    if (!textToSend.trim() || isTyping || requestControllerRef.current) return;
 
     triggerHaptic('light');
 
     const userMsg = {
       sender: 'user',
       text: textToSend.trim(),
-      time: new Date().toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' }),
+      time: new Date().toLocaleTimeString(getLocale(language), { hour: '2-digit', minute: '2-digit' }),
     };
 
     setMessages((prev) => [...prev, userMsg]);
     setInputVal('');
     setIsTyping(true);
+
+    const controller = new AbortController();
+    requestControllerRef.current = controller;
+    requestTimeoutRef.current = setTimeout(() => controller.abort(), AI_REQUEST_TIMEOUT_MS);
 
     try {
       const context = buildFinancialContext({
@@ -56,56 +90,65 @@ export default function AIPage() {
         budgets,
         settings,
         categories,
+        userName,
       });
 
       const res = await fetch('/api/ai', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        signal: controller.signal,
         body: JSON.stringify({
           message: textToSend.trim(),
           context,
           history: messages.slice(-6),
+          language,
         }),
       });
 
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
 
       const aiMsg = {
         sender: 'ai',
         text: res.ok
           ? data.reply
-          : data.error || 'Xatolik yuz berdi. Iltimos, qayta urinib ko\'ring.',
-        time: new Date().toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' }),
+          : t(language, 'aiError'),
+        time: new Date().toLocaleTimeString(getLocale(language), { hour: '2-digit', minute: '2-digit' }),
       };
 
       setMessages((prev) => [...prev, aiMsg]);
       triggerHaptic(res.ok ? 'success' : 'error');
-    } catch {
+    } catch (error) {
+      if (unmountedRef.current) return;
       setMessages((prev) => [
         ...prev,
         {
           sender: 'ai',
-          text: 'Internet aloqasi yo\'q yoki server javob bermadi. Qayta urinib ko\'ring.',
-          time: new Date().toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' }),
+          text: error.name === 'AbortError'
+            ? t(language, 'aiTimeout')
+            : t(language, 'aiOffline'),
+          time: new Date().toLocaleTimeString(getLocale(language), { hour: '2-digit', minute: '2-digit' }),
         },
       ]);
       triggerHaptic('error');
     } finally {
-      setIsTyping(false);
+      clearTimeout(requestTimeoutRef.current);
+      requestTimeoutRef.current = null;
+      if (requestControllerRef.current === controller) requestControllerRef.current = null;
+      if (!unmountedRef.current) setIsTyping(false);
     }
   };
 
   const quickPrompts = [
-    { text: '📊 Xarajatlarimni tahlil qil', query: 'xarajatlarimni tahlil qil' },
-    { text: "💡 Pul tejash bo'yicha maslahat", query: "tejash bo'yicha maslahat" },
-    { text: '📈 Byudjetim ahvoli qanday?', query: 'byudjetim ahvoli qanday' },
+    { text: t(language, 'promptExpenses'), query: t(language, 'promptExpenses').replace('📊 ', '') },
+    { text: t(language, 'promptSavings'), query: t(language, 'promptSavings').replace('💡 ', '') },
+    { text: t(language, 'promptBudget'), query: t(language, 'promptBudget').replace('📈 ', '') },
   ];
 
   return (
     <>
       <header className="view-header">
-        <h1>AI Maslahatchi</h1>
-        <p>Sun&apos;iy intellekt moliya maslahatchisi bilan suhbat</p>
+        <h1>{t(language, 'aiTitle')}</h1>
+        <p>{t(language, 'aiSubtitle')}</p>
       </header>
 
       <section
@@ -153,7 +196,7 @@ export default function AIPage() {
                   style={{
                     background: isAI ? 'var(--glass-bg)' : 'var(--primary-gradient)',
                     border: isAI ? '1px solid var(--glass-border)' : 'none',
-                    color: '#fff',
+                    color: isAI ? 'var(--text-primary)' : '#fff',
                     padding: '10px 14px',
                     borderRadius: isAI ? '0 16px 16px 16px' : '16px 0 16px 16px',
                     fontSize: '14px',
@@ -207,7 +250,7 @@ export default function AIPage() {
                   color: 'var(--text-secondary)',
                 }}
               >
-                AI maslahatchi tahlil qilmoqda...
+                {t(language, 'aiThinking')}
               </div>
             </div>
           )}
@@ -225,7 +268,7 @@ export default function AIPage() {
                 textTransform: 'uppercase',
               }}
             >
-              Tezkor savollar:
+              {t(language, 'quickQuestions')}
             </span>
             <div className="flex flex-col gap-xs">
               {quickPrompts.map((p, idx) => (
@@ -248,7 +291,7 @@ export default function AIPage() {
         >
           <input
             type="text"
-            placeholder="Savolingizni yozing..."
+            placeholder={t(language, 'questionPlaceholder')}
             value={inputVal}
             onChange={(e) => setInputVal(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSendMessage(inputVal)}

@@ -89,7 +89,9 @@ async function startBot() {
         if (update.message && update.message.text) {
           const chatId = update.message.chat.id;
           const text = update.message.text.trim();
-          const firstName = escapeHtml(update.message.chat.first_name || 'Foydalanuvchi');
+          const firstName = escapeHtml(
+            update.message.from?.first_name || update.message.chat.first_name || 'Foydalanuvchi'
+          );
 
           if (text.startsWith('/start')) {
             console.log(`📨 /start buyrug'i olindi. Chat ID: ${chatId}`);
@@ -99,7 +101,7 @@ async function startBot() {
             const replyMarkup = {
               inline_keyboard: [
                 [
-                  { text: '🚀 Mini Appni ochish', web_app: { url: appUrl } }
+                  { text: 'Open Mini App', web_app: { url: appUrl } }
                 ]
               ]
             };

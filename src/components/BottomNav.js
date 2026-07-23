@@ -4,16 +4,20 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Home, Sparkles, PieChart, Wallet, Settings } from 'lucide-react';
 import { triggerHaptic } from '../lib/telegram';
+import { useApp } from '../context/AppContext';
+import { t } from '../lib/i18n';
 
 export default function BottomNav() {
   const pathname = usePathname();
+  const { settings } = useApp();
+  const language = settings.language || 'uz';
 
   const navItems = [
-    { label: 'Bosh sahifa', icon: Home, path: '/' },
-    { label: 'Statistika', icon: PieChart, path: '/stats' },
-    { label: 'Byudjet', icon: Wallet, path: '/budget' },
+    { label: t(language, 'home'), icon: Home, path: '/' },
+    { label: t(language, 'stats'), icon: PieChart, path: '/stats' },
+    { label: t(language, 'budget'), icon: Wallet, path: '/budget' },
     { label: 'AI', icon: Sparkles, path: '/ai' },
-    { label: 'Sozlamalar', icon: Settings, path: '/settings' }
+    { label: t(language, 'settings'), icon: Settings, path: '/settings' }
   ];
 
   const handleNavClick = () => {

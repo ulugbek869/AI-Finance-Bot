@@ -7,6 +7,33 @@ export const getTelegramWebApp = () => {
   return null;
 };
 
+export const getTelegramUser = () => {
+  const webAppUser = getTelegramWebApp()?.initDataUnsafe?.user;
+  if (webAppUser) return webAppUser;
+
+  if (typeof window === 'undefined') return null;
+
+  try {
+    const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+    const searchParams = new URLSearchParams(window.location.search);
+    const initData = hashParams.get('tgWebAppData') || searchParams.get('tgWebAppData');
+    const userData = initData ? new URLSearchParams(initData).get('user') : null;
+
+    return userData ? JSON.parse(userData) : null;
+  } catch {
+    return null;
+  }
+};
+
+export const getTelegramUserName = (user) => {
+  const fullName = [user?.first_name, user?.last_name]
+    .filter((part) => typeof part === 'string' && part.trim())
+    .map((part) => part.trim())
+    .join(' ');
+
+  return fullName || user?.username?.trim() || '';
+};
+
 export const initTelegram = () => {
   const tg = getTelegramWebApp();
   if (tg) {

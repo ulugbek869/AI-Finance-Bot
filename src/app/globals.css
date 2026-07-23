@@ -110,8 +110,8 @@
   /* Override Telegram specific properties to prevent client overrides */
   --tg-theme-bg-color: #e8e9f3;
   --tg-theme-secondary-bg-color: #ffffff;
-  --tg-theme-text-color: #1a1a2e;
-  --tg-theme-hint-color: #6b6b80;
+  --tg-theme-text-color: #000000;
+  --tg-theme-hint-color: #222222;
   --tg-theme-link-color: #667eea;
   --tg-theme-button-color: #667eea;
   --tg-theme-button-text-color: #ffffff;
@@ -122,9 +122,9 @@
   --bg-card-hover: rgba(255, 255, 255, 1);
   --bg-modal: rgba(0, 0, 0, 0.4);
 
-  --text-primary: #1a1a2e;
-  --text-secondary: #6b6b80;
-  --text-tertiary: rgba(0, 0, 0, 0.35);
+  --text-primary: #000000;
+  --text-secondary: #222222;
+  --text-tertiary: #555555;
 
   --border-color: rgba(0, 0, 0, 0.08);
   --border-color-hover: rgba(0, 0, 0, 0.14);
@@ -146,9 +146,9 @@
   --bg-card-hover: rgba(255, 255, 255, 1);
   --bg-modal: rgba(0, 0, 0, 0.4);
 
-  --text-primary: var(--tg-theme-text-color, #1a1a2e);
-  --text-secondary: var(--tg-theme-hint-color, #6b6b80);
-  --text-tertiary: rgba(0, 0, 0, 0.35);
+  --text-primary: #000000;
+  --text-secondary: #222222;
+  --text-tertiary: #555555;
 
   --border-color: rgba(0, 0, 0, 0.08);
   --border-color-hover: rgba(0, 0, 0, 0.14);
@@ -865,6 +865,147 @@ ul { list-style: none; }
   text-align: center;
 }
 
+/* ── Language selector ── */
+.language-list,
+.currency-selector {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+/* Til tanlovlari orasidagi bo'shliq kattaroq bo'lsin: yonma-yon
+   ko'rinib ketmasin va noto'g'ri tanlash ehtimoli kamayadi. */
+.language-list {
+  gap: var(--space-xl);
+}
+
+.language-option,
+.currency-option {
+  width: 100%;
+  min-height: 76px;
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-md) var(--space-lg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  background: var(--glass-bg);
+  color: var(--text-primary);
+  text-align: left;
+  transition: transform var(--transition-base), background var(--transition-base), border-color var(--transition-base);
+}
+
+.language-option:active,
+.currency-option:active {
+  transform: scale(0.98);
+  background: var(--bg-card-hover);
+}
+
+.language-option.selected,
+.currency-option.selected {
+  border-color: var(--primary);
+  background: rgba(102, 126, 234, 0.16);
+}
+
+.language-code {
+  width: 46px;
+  height: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border-radius: var(--radius-sm);
+  background: var(--bg-card);
+  font-size: var(--font-sm);
+  font-weight: 800;
+  letter-spacing: 0.5px;
+}
+
+.currency-symbol {
+  width: 46px;
+  height: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border-radius: var(--radius-sm);
+  background: var(--bg-card);
+  font-size: var(--font-lg);
+  font-weight: 800;
+}
+
+.language-details {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+}
+
+.currency-details {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+}
+
+.language-name {
+  font-size: var(--font-base);
+  font-weight: 700;
+}
+
+.currency-name {
+  font-size: var(--font-base);
+  font-weight: 700;
+}
+
+.language-native-name {
+  margin-top: 2px;
+  color: var(--text-secondary);
+  font-size: var(--font-xs);
+}
+
+.currency-code {
+  margin-top: 2px;
+  color: var(--text-secondary);
+  font-size: var(--font-xs);
+}
+
+.language-selected-indicator {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border-radius: var(--radius-full);
+  color: transparent;
+  font-size: var(--font-sm);
+  font-weight: 800;
+}
+
+.currency-selected-indicator {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border-radius: var(--radius-full);
+  color: transparent;
+  font-size: var(--font-sm);
+  font-weight: 800;
+}
+
+.language-option.selected .language-selected-indicator {
+  background: var(--primary-gradient);
+  color: #fff;
+}
+
+.currency-option.selected .currency-selected-indicator {
+  background: var(--primary-gradient);
+  color: #fff;
+}
+
 /* ── Forms ── */
 .form-group {
   margin-bottom: var(--space-md);
@@ -1222,6 +1363,22 @@ ul { list-style: none; }
 
 .fab:active {
   transform: scale(0.9) rotate(90deg);
+}
+
+.fab.recording {
+  background: var(--expense-gradient);
+  animation: voice-recording 1s ease-in-out infinite;
+}
+
+.fab:disabled {
+  cursor: wait;
+  opacity: 0.72;
+}
+
+@keyframes voice-recording {
+  50% {
+    box-shadow: 0 0 0 10px rgba(255, 107, 107, 0.16), 0 4px 16px rgba(255, 107, 107, 0.35);
+  }
 }
 
 .stats-summary {

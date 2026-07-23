@@ -6,6 +6,7 @@ export function buildFinancialContext({
   budgets,
   settings,
   categories,
+  userName,
 }) {
   const findCat = (id) =>
     categories.expense.find((c) => c.id === id) ||
@@ -52,6 +53,7 @@ export function buildFinancialContext({
   });
 
   return {
+    userName,
     currency: settings.currencySymbol,
     balance,
     totalIncome,

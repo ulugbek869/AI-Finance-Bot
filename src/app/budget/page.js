@@ -6,6 +6,7 @@ import BottomNav from '../../components/BottomNav';
 import Modal from '../../components/Modal';
 import Toast from '../../components/Toast';
 import { triggerHaptic } from '../../lib/telegram';
+import { getCategoryName, getLocale, t } from '../../lib/i18n';
 
 export default function BudgetPage() {
   const { transactions, budgets, updateBudget, categories, settings } = useApp();
@@ -13,6 +14,7 @@ export default function BudgetPage() {
   const [selectedCat, setSelectedCat] = useState(null);
   const [budgetAmount, setBudgetAmount] = useState('');
   const [toastMessage, setToastMessage] = useState('');
+  const language = settings.language || 'uz';
 
   const showToast = (message) => {
     setToastMessage(message);
@@ -56,16 +58,16 @@ export default function BudgetPage() {
     triggerHaptic('success');
     showToast(
       amount > 0 
-        ? `${selectedCat.icon} ${selectedCat.name} uchun byudjet belgilandi!` 
-        : `${selectedCat.icon} ${selectedCat.name} byudjeti o'chirildi!`
+        ? t(language, 'budgetSet', { category: getCategoryName(selectedCat, language) })
+        : t(language, 'budgetRemoved', { category: getCategoryName(selectedCat, language) })
     );
   };
 
   return (
     <>
       <header className="view-header">
-        <h1>Oylik byudjetlar</h1>
-        <p>Kategoriyalar bo'yicha oylik xarajatlar limitini o'rnating</p>
+        <h1>{t(language, 'budgetTitle')}</h1>
+        <p>{t(language, 'budgetSubtitle')}</p>
       </header>
 
       {/* Budget List */}
@@ -99,14 +101,14 @@ export default function BudgetPage() {
                 <div className="budget-header">
                   <div className="budget-category">
                     <span style={{ fontSize: '20px' }}>{cat.icon}</span>
-                    <span>{cat.name}</span>
+                    <span>{getCategoryName(cat, language)}</span>
                   </div>
                   <div className="budget-amounts">
                     <span className="text-expense" style={{ fontWeight: '600' }}>
-                      {new Intl.NumberFormat('uz-UZ').format(spent)}
+                      {new Intl.NumberFormat(getLocale(language)).format(spent)}
                     </span>
                     <span className="text-secondary">
-                      {' '} / {limit > 0 ? `${new Intl.NumberFormat('uz-UZ').format(limit)} ${settings.currencySymbol}` : "Limit yo'q"}
+                      {' '} / {limit > 0 ? `${new Intl.NumberFormat(getLocale(language)).format(limit)} ${settings.currencySymbol}` : t(language, 'noLimit')}
                     </span>
                   </div>
                 </div>
@@ -122,12 +124,12 @@ export default function BudgetPage() {
                     <div className="budget-percentage" style={{ 
                       color: percentage >= 100 ? 'var(--expense)' : percentage >= 80 ? 'var(--warning-dark)' : 'var(--income)'
                     }}>
-                      {percentage}% sarflandi
+                      {percentage}% {t(language, 'spent')}
                     </div>
                   </>
                 ) : (
                   <div className="text-secondary" style={{ fontSize: '12px', fontStyle: 'italic' }}>
-                    Limit o'rnatish uchun bosing
+                    {t(language, 'setLimit')}
                   </div>
                 )}
               </div>
@@ -140,15 +142,15 @@ export default function BudgetPage() {
       <Modal
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
-        title={selectedCat ? `${selectedCat.icon} ${selectedCat.name} limitini belgilash` : ''}
+        title={selectedCat ? `${selectedCat.icon} ${t(language, 'setLimitTitle', { category: getCategoryName(selectedCat, language) })}` : ''}
       >
         <form onSubmit={handleSaveBudget} className="flex flex-col gap-md">
           <div className="form-group">
-            <label className="form-label text-center">Oylik limit summasi ({settings.currencySymbol})</label>
+            <label className="form-label text-center">{t(language, 'monthlyLimit', { currency: settings.currencySymbol })}</label>
             <input
               type="number"
               inputMode="decimal"
-              placeholder="0 (o'chirish uchun bo'sh qoldiring)"
+              placeholder={t(language, 'limitPlaceholder')}
               value={budgetAmount}
               onChange={(e) => setBudgetAmount(e.target.value)}
               className="form-input form-input-amount"
@@ -157,7 +159,7 @@ export default function BudgetPage() {
           </div>
           
           <button type="submit" className="btn btn-primary">
-            Saqlash
+            {t(language, 'save')}
           </button>
         </form>
       </Modal>

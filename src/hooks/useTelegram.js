@@ -1,33 +1,60 @@
 // src/hooks/useTelegram.js
 'use client';
 import { useEffect, useState } from 'react';
-import { getTelegramWebApp, initTelegram, applyTelegramTheme } from '../lib/telegram';
+import { initTelegram, applyTelegramTheme, getTelegramUser, getTelegramUserName } from '../lib/telegram';
 
 export function useTelegram() {
   const [tg, setTg] = useState(null);
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(getTelegramUser);
 
   useEffect(() => {
-    const webApp = initTelegram();
-    if (webApp) {
-      setTg(webApp);
-      setUser(webApp.initDataUnsafe?.user || null);
+    let webApp = null;
+    let retryTimer = null;
+
+    const handleThemeChange = () => {
       applyTelegramTheme();
+    };
 
-      const handleThemeChange = () => {
+    const syncTelegramUser = () => {
+      const nextWebApp = webApp || initTelegram();
+      if (nextWebApp && nextWebApp !== webApp) {
+        if (webApp) webApp.offEvent('themeChanged', handleThemeChange);
+        webApp = nextWebApp;
+        setTg(webApp);
         applyTelegramTheme();
-      };
+        webApp.onEvent('themeChanged', handleThemeChange);
+      }
 
-      webApp.onEvent('themeChanged', handleThemeChange);
-      return () => {
-        webApp.offEvent('themeChanged', handleThemeChange);
-      };
+      const nextUser = getTelegramUser();
+      if (nextUser) {
+        setUser(nextUser);
+        if (retryTimer) clearInterval(retryTimer);
+        return true;
+      }
+
+      return false;
+    };
+
+    if (!syncTelegramUser()) {
+      let attempts = 0;
+      retryTimer = setInterval(() => {
+        attempts += 1;
+        if (syncTelegramUser() || attempts >= 20) clearInterval(retryTimer);
+      }, 250);
     }
+
+    return () => {
+      if (retryTimer) clearInterval(retryTimer);
+      if (webApp) {
+        webApp.offEvent('themeChanged', handleThemeChange);
+      }
+    };
   }, []);
 
   return {
     tg,
     user,
+    userName: getTelegramUserName(user),
     colorScheme: tg?.colorScheme || 'dark'
   };
 }
